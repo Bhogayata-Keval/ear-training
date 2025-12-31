@@ -28,6 +28,37 @@
       padding-bottom: 12px;
     }
 
+    .mode-selector {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mode-button {
+      border: none;
+      background: #fff;
+      color: #000;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #dcdcdc;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .mode-button.active {
+      background: #2f80ed;
+      color: #fff;
+      border-color: #1c61c3;
+    }
+
+    .mode-selector p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
     .key {
       border-radius: 6px;
       border: 1px solid #333;
@@ -313,6 +344,12 @@
 
 <h1>Random Note Generator : For Ear Training</h1>
 
+<div class="mode-selector">
+  <button type="button" class="mode-button" data-mode="play" onclick="setMode('play')">Play mode</button>
+  <button type="button" class="mode-button active" data-mode="test" onclick="setMode('test')">Test mode</button>
+  <p id="mode-instruction">Tap the keys to hear them play or switch to test mode for guessing.</p>
+</div>
+
 <div id="note-list"></div>
 
 <div class="controls-row">
@@ -390,14 +427,49 @@ const DEFAULT_SELECTED_NOTES = ["c4", "d4", "e4", "f4", "g4", "a4", "b4"];
 const selectedNotes = new Set(DEFAULT_SELECTED_NOTES);
 let AUDIO_CLIPS = Array.from(selectedNotes);
 let isPlaying = false;
+let activeMode = "test";
 
-function setPlayButtonState(disabled) {
+function refreshPlayButtonState() {
     const button = document.getElementById("play-random");
     if (!button) {
         return;
     }
+    const disabled = isPlaying || activeMode !== "test";
     button.disabled = disabled;
     button.classList.toggle("disabled", disabled);
+}
+
+function setMode(mode) {
+    activeMode = mode;
+    document.querySelectorAll(".mode-button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.mode === mode);
+    });
+    const instruction = document.getElementById("mode-instruction");
+    if (instruction) {
+        instruction.textContent = mode === "play"
+            ? "Play mode: Tap any key to hear its sound."
+            : "Test mode: play a random note, guess it, and check the answer.";
+    }
+    refreshPlayButtonState();
+    updateGuessOptions();
+    const guessSelect = document.getElementById("guess-select");
+    if (guessSelect) {
+        guessSelect.disabled = mode !== "test" || !AUDIO_CLIPS.length;
+    }
+}
+
+function playNoteImmediate(noteId) {
+    const noteAudio = new Audio();
+    noteAudio.src = "./mp3_notes/" + noteId + ".mp3";
+    noteAudio.play();
+}
+
+function handleKeyInteraction(noteId, button) {
+    if (activeMode === "play") {
+        playNoteImmediate(noteId);
+        return;
+    }
+    toggleKey(noteId, button);
 }
 
 function populateReferenceSelect() {
@@ -484,6 +556,7 @@ function showNoteList() {
     container.appendChild(controls);
 
     updateSelectedList();
+    setMode(activeMode);
 }
 
 function createKey(noteId, isBlack) {
@@ -492,7 +565,7 @@ function createKey(noteId, isBlack) {
     key.className = "key " + (isBlack ? "black-key" : "white-key") + (selectedNotes.has(noteId) ? " selected" : "");
     key.dataset.note = noteId;
     key.textContent = formatLabel(noteId);
-    key.addEventListener("click", () => toggleKey(noteId, key));
+    key.addEventListener("click", () => handleKeyInteraction(noteId, key));
     return key;
 }
 
@@ -552,7 +625,7 @@ function updateGuessOptions() {
         select.disabled = true;
         return;
     }
-    select.disabled = false;
+    select.disabled = activeMode !== "test";
     const placeholder = document.createElement("option");
     placeholder.value = "";
     placeholder.textContent = "Select a note";
@@ -571,6 +644,11 @@ function playRandomNote() {
     const answerDisplay = document.getElementById("answer-display");
     answerDisplay.textContent = "";
 
+    if (activeMode !== "test") {
+        answerDisplay.textContent = "Switch to test mode to run the guessing exercise.";
+        return;
+    }
+
     if (isPlaying) {
         answerDisplay.textContent = "Wait for the current note sequence to finish.";
         return;
@@ -582,7 +660,7 @@ function playRandomNote() {
     }
 
     isPlaying = true;
-    setPlayButtonState(true);
+    refreshPlayButtonState();
 
     const myAudio = new Audio();
     const answer = AUDIO_CLIPS[Math.floor(Math.random() * AUDIO_CLIPS.length)];
@@ -615,7 +693,7 @@ function playRandomNote() {
     const totalDuration = startDelay + count * 1000 * gap;
     setTimeout(() => {
         isPlaying = false;
-        setPlayButtonState(false);
+        refreshPlayButtonState();
     }, totalDuration);
 }
 
