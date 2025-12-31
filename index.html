@@ -385,6 +385,7 @@
     <div class="step-card">
       <span class="step-number">Step 1</span>
       <button id="play-random" class="play" onclick="playRandomNote()">Play a Random Note</button>
+      <button id="play-again" class="play" onclick="playExistingSequence()" disabled>Hear Again</button>
       <p class="step-description">Play a random note to start the exercise.</p>
     </div>
     <div class="step-card">
@@ -460,6 +461,7 @@ const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 const buffers = {};
 let soundsReady = false;
 let loadingPromise = null;
+let lastAnswer = "";
 
 function refreshPlayButtonState() {
     const button = document.getElementById("play-random");
@@ -469,6 +471,7 @@ function refreshPlayButtonState() {
     const disabled = isPlaying || activeMode !== "test";
     button.disabled = disabled;
     button.classList.toggle("disabled", disabled);
+    refreshPlayAgainButtonState();
 }
 
 function setMode(mode) {
@@ -554,6 +557,68 @@ function playBuffer(note) {
     return source;
 }
 
+function refreshPlayAgainButtonState() {
+    const button = document.getElementById("play-again");
+    if (!button) {
+        return;
+    }
+    const disabled = !lastAnswer || isPlaying || activeMode !== "test" || !soundsReady;
+    button.disabled = disabled;
+    button.classList.toggle("disabled", disabled);
+}
+
+function playSequence(note) {
+    const repeatInput = parseInt(document.getElementById("repeat-count").value, 10);
+    const gapInput = parseFloat(document.getElementById("gap-among-notes").value);
+    const count = Number.isFinite(repeatInput) && repeatInput > 0 ? repeatInput : 1;
+    const gap = Number.isFinite(gapInput) && gapInput > 0 ? gapInput : 1;
+
+    const referenceToggle = document.getElementById("reference-note-toggle");
+    const referenceSelect = document.getElementById("reference-note-select");
+    const referenceEnabled = referenceToggle ? referenceToggle.checked : false;
+    const referenceNote = referenceSelect ? referenceSelect.value : "";
+
+    isPlaying = true;
+    refreshPlayButtonState();
+
+    if (referenceEnabled && referenceNote) {
+        playBuffer(referenceNote);
+    }
+
+    const startDelay = referenceEnabled ? 1000 * gap : 0;
+    for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+            playBuffer(note);
+        }, startDelay + i * 1000 * gap);
+    }
+
+    const totalDuration = startDelay + count * 1000 * gap;
+    setTimeout(() => {
+        isPlaying = false;
+        refreshPlayButtonState();
+    }, totalDuration);
+}
+
+function playExistingSequence() {
+    const answerDisplay = document.getElementById("answer-display");
+    if (activeMode !== "test") {
+        answerDisplay.textContent = "Switch to test mode to run the guessing exercise.";
+        return;
+    }
+    if (!soundsReady) {
+        updateSoundStatus("Loading sounds, please wait...");
+        return;
+    }
+    if (isPlaying) {
+        answerDisplay.textContent = "Wait for the current note sequence to finish.";
+        return;
+    }
+    if (!lastAnswer) {
+        answerDisplay.textContent = "Play a random note first.";
+        return;
+    }
+    playSequence(lastAnswer);
+}
 async function loadAllNotes() {
     updateSoundStatus("Loading sounds...");
     loadingPromise = Promise.all(ALL_AUDIO_CLIPS.map(loadNote))
@@ -762,38 +827,11 @@ function playRandomNote() {
         return;
     }
 
-    isPlaying = true;
-    refreshPlayButtonState();
-
     const answer = AUDIO_CLIPS[Math.floor(Math.random() * AUDIO_CLIPS.length)];
     document.getElementById("note-answer").value = answer;
-
-    const repeatInput = parseInt(document.getElementById("repeat-count").value, 10);
-    const gapInput = parseFloat(document.getElementById("gap-among-notes").value);
-    const count = Number.isFinite(repeatInput) && repeatInput > 0 ? repeatInput : 1;
-    const gap = Number.isFinite(gapInput) && gapInput > 0 ? gapInput : 1;
-
-    const referenceToggle = document.getElementById("reference-note-toggle");
-    const referenceSelect = document.getElementById("reference-note-select");
-    const referenceEnabled = referenceToggle ? referenceToggle.checked : false;
-    const referenceNote = referenceSelect ? referenceSelect.value : "";
-
-    if (referenceEnabled && referenceNote) {
-        playBuffer(referenceNote);
-    }
-
-    const startDelay = referenceEnabled ? 1000 * gap : 0;
-    for (let i = 0; i < count; i++) {
-        setTimeout(() => {
-            playBuffer(answer);
-        }, startDelay + i * 1000 * gap);
-    }
-
-    const totalDuration = startDelay + count * 1000 * gap;
-    setTimeout(() => {
-        isPlaying = false;
-        refreshPlayButtonState();
-    }, totalDuration);
+    lastAnswer = answer;
+    refreshPlayAgainButtonState();
+    playSequence(answer);
 }
 
 function checkAnswer() {
