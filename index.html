@@ -111,6 +111,70 @@
 
     .controls-row {
       margin-top: 24px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .steps-row {
+      flex: 2;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .step-card {
+      background: #fff;
+      border: 1px solid #dcdcdc;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 140px;
+      justify-content: space-between;
+    }
+
+    .step-card button {
+      width: 100%;
+      border: none;
+      background: #2f80ed;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .step-card button:hover:not(:disabled) {
+      background: #2563eb;
+    }
+
+    .step-card button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .step-number {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #1e1e1e;
+    }
+
+    .step-description {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    .answer-display {
+      font-weight: 600;
+      margin-top: 8px;
     }
 
     .reference-controls {
@@ -138,8 +202,23 @@
       gap: 6px;
     }
 
+    .settings-panel {
+      flex: 1;
+      min-width: 260px;
+      background: #fff;
+      border: 1px solid #dcdcdc;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .settings-panel h3 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+    }
+
     #guess-select {
-      width: 200px;
+      width: 100%;
       margin-top: 6px;
     }
 
@@ -214,6 +293,20 @@
         text-align: center;
       }
     }
+
+    @media (max-width: 900px) {
+      .steps-row {
+        grid-template-columns: 1fr;
+      }
+
+      .controls-row {
+        flex-direction: column;
+      }
+
+      .settings-panel {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body onload="showNoteList()">
@@ -223,32 +316,44 @@
 <div id="note-list"></div>
 
 <div class="controls-row">
-  <div class="reference-controls">
-    <label class="reference-toggle">
-      <input type="checkbox" id="reference-note-toggle" checked>
-      Play reference note before pattern
-    </label>
-    <label for="reference-note-select">Reference note</label>
-    <select id="reference-note-select"></select>
+  <div class="steps-row">
+    <div class="step-card">
+      <span class="step-number">Step 1</span>
+      <button id="play-random" class="play" onclick="playRandomNote()">Play a Random Note</button>
+      <p class="step-description">Play a random note to start the exercise.</p>
+    </div>
+    <div class="step-card">
+      <span class="step-number">Step 2</span>
+      <label for="guess-select">Guess the note</label>
+      <select id="guess-select">
+        <option value="">Select a note</option>
+      </select>
+      <p class="step-description">Choose which key you think just played.</p>
+    </div>
+    <div class="step-card">
+      <span class="step-number">Step 3</span>
+      <button class="check" onclick="checkAnswer()">Check Answer</button>
+      <p class="step-description">Reveal the correct note.</p>
+    </div>
+    <p id="answer-display" class="answer-display"></p>
   </div>
 
-  <label for="repeat-count">How many times should the note be played?</label>
-  <input type="number" id="repeat-count" value="3" min="1">
+  <div class="settings-panel">
+    <h3>Settings</h3>
+    <div class="reference-controls">
+      <label class="reference-toggle">
+        <input type="checkbox" id="reference-note-toggle" checked>
+        Play reference note before pattern
+      </label>
+      <label for="reference-note-select">Reference note</label>
+      <select id="reference-note-select"></select>
+    </div>
+    <label for="repeat-count">How many times should the note be played?</label>
+    <input type="number" id="repeat-count" value="3" min="1">
 
-  <label for="gap-among-notes">Gap between consecutive notes (seconds)?</label>
-  <input type="number" id="gap-among-notes" value="2" min="0.1" step="0.1">
-
-  <div class="action-buttons">
-    <button class="play" onclick="playRandomNote()">Play a Random Note</button>
-    <button class="check" onclick="checkAnswer()">Check Answer</button>
+    <label for="gap-among-notes">Gap between consecutive notes (seconds)?</label>
+    <input type="number" id="gap-among-notes" value="2" min="0.1" step="0.1">
   </div>
-
-  <label for="guess-select">Enter your guess (for checking)</label>
-  <select id="guess-select">
-    <option value="">Select a note</option>
-  </select>
-
-<p id="answer-display"></p>
 </div>
 
 <input type="hidden" id="note-answer">
@@ -281,8 +386,19 @@ const PREVIOUS_WHITE = {
     a: 'g',
     b: 'a'
 };
-const selectedNotes = new Set(ALL_AUDIO_CLIPS);
-let AUDIO_CLIPS = Array.from(ALL_AUDIO_CLIPS);
+const DEFAULT_SELECTED_NOTES = ["c4", "d4", "e4", "f4", "g4", "a4", "b4"];
+const selectedNotes = new Set(DEFAULT_SELECTED_NOTES);
+let AUDIO_CLIPS = Array.from(selectedNotes);
+let isPlaying = false;
+
+function setPlayButtonState(disabled) {
+    const button = document.getElementById("play-random");
+    if (!button) {
+        return;
+    }
+    button.disabled = disabled;
+    button.classList.toggle("disabled", disabled);
+}
 
 function populateReferenceSelect() {
     const select = document.getElementById("reference-note-select");
@@ -450,15 +566,23 @@ function updateGuessOptions() {
         select.appendChild(option);
     });
 }
-
+              
 function playRandomNote() {
     const answerDisplay = document.getElementById("answer-display");
     answerDisplay.textContent = "";
+
+    if (isPlaying) {
+        answerDisplay.textContent = "Wait for the current note sequence to finish.";
+        return;
+    }
 
     if (!AUDIO_CLIPS.length) {
         answerDisplay.textContent = "Select at least one note to play.";
         return;
     }
+
+    isPlaying = true;
+    setPlayButtonState(true);
 
     const myAudio = new Audio();
     const answer = AUDIO_CLIPS[Math.floor(Math.random() * AUDIO_CLIPS.length)];
@@ -487,6 +611,12 @@ function playRandomNote() {
             myAudio.play();
         }, startDelay + i * 1000 * gap);
     }
+
+    const totalDuration = startDelay + count * 1000 * gap;
+    setTimeout(() => {
+        isPlaying = false;
+        setPlayButtonState(false);
+    }, totalDuration);
 }
 
 function checkAnswer() {
@@ -495,7 +625,6 @@ function checkAnswer() {
         document.getElementById("answer-display").textContent = "Play a note first.";
         return;
     }
-    const guessInput = document.getElementById("guess-input");
     const guessSelect = document.getElementById("guess-select");
     const guessValue = guessSelect ? guessSelect.value : "";
     const guessText = guessValue ? ` Your guess: ${formatLabel(guessValue)}.` : "";
