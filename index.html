@@ -4,6 +4,22 @@
   <meta charset="UTF-8">
   <title>Random Note Generator</title>
   <!-- Cloudflare Web Analytics -->
+  <script src="https://cdnjs.middleware.io/browser/libs/0.0.2/middleware-rum.min.js" type="text/javascript" crossorigin="anonymous"></script>
+
+  <script>
+    if (window.Middleware){
+        Middleware.track({
+        serviceName:"musical-ear",
+        projectName:"musical-ear",
+        accountKey:"lxjziubyikaomcycmipkmhjlvqxindmezdaj",
+        target: "https://sandbox.middleware.io",
+        tracePropagationTargets: [/.*/],
+        defaultAttributes: {
+            "app.version": "1.0.0",
+        },
+        })
+    }
+    </script>
   <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "177d2c7f5c074081a1bc15acbeb4c18d"}'></script>
   <!-- End Cloudflare Web Analytics -->
   <style>
