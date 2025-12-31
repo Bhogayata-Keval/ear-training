@@ -78,6 +78,12 @@
       color: #555;
     }
 
+    .sound-status {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #2769d5;
+    }
+
     .key {
       border-radius: 6px;
       border: 1px solid #333;
@@ -361,12 +367,15 @@
 </head>
 <body onload="showNoteList()">
 
-<h1>Random Note Generator : For Ear Training</h1>
+<h1>Music School</h1>
 
 <div class="mode-selector">
   <button type="button" class="mode-button" data-mode="play" onclick="setMode('play')">Play mode</button>
-  <button type="button" class="mode-button active" data-mode="test" onclick="setMode('test')">Test mode</button>
-  <p id="mode-instruction">Tap the keys to hear them play or switch to test mode for guessing.</p>
+  <button type="button" class="mode-button active" data-mode="test" onclick="setMode('test')">Ear Training</button>
+  <div>
+    <p id="mode-instruction">Tap the keys to hear them play or switch to test mode for guessing.</p>
+    <p id="sound-status" class="sound-status">Loading sounds…</p>
+  </div>
 </div>
 
 <div id="note-list"></div>
@@ -447,6 +456,10 @@ const selectedNotes = new Set(DEFAULT_SELECTED_NOTES);
 let AUDIO_CLIPS = Array.from(selectedNotes);
 let isPlaying = false;
 let activeMode = "test";
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const buffers = {};
+let soundsReady = false;
+let loadingPromise = null;
 
 function refreshPlayButtonState() {
     const button = document.getElementById("play-random");
@@ -473,14 +486,16 @@ function setMode(mode) {
     updateGuessOptions();
     const guessSelect = document.getElementById("guess-select");
     if (guessSelect) {
-        guessSelect.disabled = mode !== "test" || !AUDIO_CLIPS.length;
+        guessSelect.disabled = mode !== "test" || !AUDIO_CLIPS.length || !soundsReady;
     }
 }
 
 function playNoteImmediate(noteId) {
-    const noteAudio = new Audio();
-    noteAudio.src = "./mp3_notes/" + noteId + ".mp3";
-    noteAudio.play();
+    if (!soundsReady) {
+        updateSoundStatus("Waiting for sounds to load...");
+        return;
+    }
+    playBuffer(noteId);
 }
 
 function handleKeyInteraction(noteId, button) {
@@ -489,6 +504,70 @@ function handleKeyInteraction(noteId, button) {
         return;
     }
     toggleKey(noteId, button);
+}
+
+function updateSoundStatus(message, isError = false) {
+    const status = document.getElementById("sound-status");
+    if (!status) {
+        return;
+    }
+    status.textContent = message;
+    status.style.color = isError ? "#c00" : "#2769d5";
+}
+
+async function decodeAudioData(arrayBuffer) {
+    try {
+        return await audioCtx.decodeAudioData(arrayBuffer);
+    } catch (error) {
+        return await new Promise((resolve, reject) =>
+            audioCtx.decodeAudioData(arrayBuffer.slice(0), resolve, reject)
+        );
+    }
+}
+
+async function loadNote(note) {
+    const response = await fetch("./mp3_notes/" + note + ".mp3");
+    if (!response.ok) {
+        throw new Error("Failed to fetch " + note);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const decoded = await decodeAudioData(arrayBuffer);
+    buffers[note] = decoded;
+}
+
+function playBuffer(note) {
+    if (!soundsReady) {
+        return;
+    }
+    const buffer = buffers[note];
+    if (!buffer) {
+        console.warn("Missing buffer for", note);
+        return;
+    }
+    if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+    }
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start();
+    return source;
+}
+
+async function loadAllNotes() {
+    updateSoundStatus("Loading sounds...");
+    loadingPromise = Promise.all(ALL_AUDIO_CLIPS.map(loadNote))
+        .then(() => {
+            soundsReady = true;
+            updateSoundStatus("Sounds ready");
+            refreshPlayButtonState();
+            updateGuessOptions();
+        })
+        .catch(error => {
+            console.error(error);
+            updateSoundStatus("Failed to load sounds", true);
+        });
+    return loadingPromise;
 }
 
 function populateReferenceSelect() {
@@ -644,7 +723,7 @@ function updateGuessOptions() {
         select.disabled = true;
         return;
     }
-    select.disabled = activeMode !== "test";
+    select.disabled = activeMode !== "test" || !soundsReady;
     const placeholder = document.createElement("option");
     placeholder.value = "";
     placeholder.textContent = "Select a note";
@@ -668,6 +747,11 @@ function playRandomNote() {
         return;
     }
 
+    if (!soundsReady) {
+        updateSoundStatus("Loading sounds, please wait...");
+        return;
+    }
+
     if (isPlaying) {
         answerDisplay.textContent = "Wait for the current note sequence to finish.";
         return;
@@ -681,10 +765,8 @@ function playRandomNote() {
     isPlaying = true;
     refreshPlayButtonState();
 
-    const myAudio = new Audio();
     const answer = AUDIO_CLIPS[Math.floor(Math.random() * AUDIO_CLIPS.length)];
     document.getElementById("note-answer").value = answer;
-    myAudio.src = "./mp3_notes/" + answer + ".mp3";
 
     const repeatInput = parseInt(document.getElementById("repeat-count").value, 10);
     const gapInput = parseFloat(document.getElementById("gap-among-notes").value);
@@ -697,15 +779,13 @@ function playRandomNote() {
     const referenceNote = referenceSelect ? referenceSelect.value : "";
 
     if (referenceEnabled && referenceNote) {
-        const referenceAudio = new Audio();
-        referenceAudio.src = "./mp3_notes/" + referenceNote + ".mp3";
-        referenceAudio.play();
+        playBuffer(referenceNote);
     }
 
     const startDelay = referenceEnabled ? 1000 * gap : 0;
     for (let i = 0; i < count; i++) {
         setTimeout(() => {
-            myAudio.play();
+            playBuffer(answer);
         }, startDelay + i * 1000 * gap);
     }
 
@@ -727,6 +807,8 @@ function checkAnswer() {
     const guessText = guessValue ? ` Your guess: ${formatLabel(guessValue)}.` : "";
     document.getElementById("answer-display").textContent = `Answer: ${formatLabel(answer)}.${guessText}`;
 }
+
+loadAllNotes();
 
 </script>
 
