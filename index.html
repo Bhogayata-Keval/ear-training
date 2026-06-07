@@ -27,26 +27,31 @@
 
 <div class="mode-selector">
   <button type="button" class="mode-button" data-mode="play" onclick="setMode('play')">Play mode</button>
-  <button type="button" class="mode-button active" data-mode="test" onclick="setMode('test')">Ear Training</button>
+  <button type="button" class="mode-button active" data-mode="ear-training" onclick="setMode(earTrainingSubMode)">Ear Training</button>
   <div>
     <p id="mode-instruction">Tap the keys to hear them play or switch to test mode for guessing.</p>
     <p id="sound-status" class="sound-status">Loading sounds…</p>
   </div>
 </div>
+<div id="ear-training-submodes" class="submode-selector">
+  <button type="button" class="submode-button active" data-submode="test" onclick="setMode('test')">Note</button>
+  <button type="button" class="submode-button" data-submode="intervals" onclick="setMode('intervals')">Interval</button>
+</div>
 
 <div id="note-list"></div>
+<div id="interval-selector"></div>
 
-<div class="controls-row">
+<div id="controls-row" class="controls-row">
   <div class="steps-row">
     <div class="step-card">
       <span class="step-number">Step 1</span>
-      <button id="play-random" class="play" onclick="playRandomNote()">Play a Random Note</button>
+      <button id="play-random" class="play" onclick="playRandom()">Play a Random Note</button>
       <button id="play-again" class="play" onclick="playExistingSequence()" disabled>Hear Again</button>
       <p class="step-description">Play a random note to start the exercise.</p>
     </div>
     <div class="step-card">
       <span class="step-number">Step 2</span>
-      <label for="guess-select">Guess the note</label>
+      <label id="guess-label" for="guess-select">Guess the note</label>
       <select id="guess-select">
         <option value="">Select a note</option>
       </select>
@@ -62,7 +67,7 @@
 
   <div class="settings-panel">
     <h3>Settings</h3>
-    <div class="reference-controls">
+    <div id="reference-controls" class="reference-controls">
       <label class="reference-toggle">
         <input type="checkbox" id="reference-note-toggle" checked>
         Play reference note before pattern
@@ -75,10 +80,20 @@
 
     <label for="gap-among-notes">Gap between consecutive notes (seconds)?</label>
     <input type="number" id="gap-among-notes" value="2" min="0.1" step="0.1">
+
+    <div id="interval-direction-group" style="display:none">
+      <label for="interval-direction">Interval direction</label>
+      <select id="interval-direction">
+        <option value="ascending">Ascending</option>
+        <option value="descending">Descending</option>
+        <option value="random">Random</option>
+      </select>
+    </div>
   </div>
 </div>
 
 <input type="hidden" id="note-answer">
+<script src="music.js"></script>
 <script src="audio.js"></script>
 <script src="app.js"></script>
 
