@@ -1,5 +1,27 @@
 # User Journey Paths & Test Checklist
 
+## Landing Page
+
+### First Visit (no localStorage `has_visited`)
+- [ ] Full hero displayed: "Online Music School" heading, subtitle, "Start Training" button
+- [ ] App content (keyboard, steps, settings) is hidden
+- [ ] Page title is "Online Music School"
+- [ ] Sounds start loading in the background (even before clicking Start)
+- [ ] Clicking "Start Training" collapses hero to compact header and reveals app
+- [ ] After clicking "Start Training", `has_visited` is set in localStorage
+
+### Return Visit (localStorage `has_visited` = "true")
+- [ ] Compact header displayed: "Online Music School" in one line
+- [ ] App content is immediately visible (no click needed)
+- [ ] Clicking the header title expands back to full hero
+- [ ] Clicking the header title again collapses back to compact
+
+### Edge Cases
+- [ ] Clearing localStorage restores full hero on next visit
+- [ ] Corrupt/missing localStorage doesn't break the page
+
+---
+
 ## Page Load (all modes)
 
 - [ ] Sound status shows "Loading sounds..."
@@ -73,8 +95,11 @@
 - [ ] "Play a Random Note" is disabled while a sequence is playing
 - [ ] Guess dropdown shows only selected notes, sorted
 - [ ] "Check Answer" before playing shows "Play a note first."
-- [ ] "Check Answer" with no guess selected shows answer only
-- [ ] "Check Answer" with a guess shows both answer and guess
+- [ ] "Check Answer" with no guess selected shows "Select a note first."
+- [ ] "Check Answer" with correct guess shows answer + guess + checkmark
+- [ ] "Check Answer" with wrong guess shows answer + guess + cross mark
+- [ ] "Check Answer" disables after first check (prevents double-recording)
+- [ ] "Check Answer" re-enables when next note is played
 
 ### Edge Cases
 - [ ] Playing with no notes selected shows "Select at least one note to play."
@@ -130,14 +155,53 @@
 - [ ] "Play an Interval" disabled while a sequence is playing
 - [ ] Guess dropdown shows only selected interval names
 - [ ] "Check Answer" before playing shows "Play an interval first."
-- [ ] "Check Answer" with no guess shows answer + notes (e.g. "Answer: Perfect 5th (C4 -> G4).")
+- [ ] "Check Answer" with no guess selected shows "Select an interval first."
 - [ ] "Check Answer" with correct guess shows answer + guess + checkmark
 - [ ] "Check Answer" with wrong guess shows answer + guess + cross mark
+- [ ] "Check Answer" disables after first check (prevents double-recording)
+- [ ] "Check Answer" re-enables when next interval is played
 
 ### Edge Cases
 - [ ] Playing with no intervals selected shows "Select at least one interval."
 - [ ] Only selecting "Octave" plays valid intervals (root note has matching note 12 semitones up)
 - [ ] Playing while sounds still loading shows loading message
+
+---
+
+## Score Tracking (both Note and Interval modes)
+
+### Stats Display
+- [ ] Stats container appears below step cards in Note mode
+- [ ] Stats container appears below step cards in Interval mode
+- [ ] Stats container is hidden in Play mode
+- [ ] Shows "Note Stats" heading in Note mode
+- [ ] Shows "Interval Stats" heading in Interval mode
+- [ ] Shows correct count, total count, and accuracy percentage
+- [ ] Shows current streak count
+- [ ] Accuracy shows 0% when no answers recorded
+
+### Recording
+- [ ] Correct answer increments correct count, total count, and streak
+- [ ] Wrong answer increments total count only, resets streak to 0
+- [ ] Each answer adds an entry to recent history
+- [ ] History entry shows checkmark (green) for correct, cross (red) for wrong
+- [ ] History entry shows answer and guess (e.g. "✔ C4 → C4")
+- [ ] History entry shows relative time ("just now", "2 min ago")
+- [ ] Maximum 20 history entries kept (oldest removed)
+- [ ] Clicking "Check Answer" twice on same question records only one entry
+
+### Persistence (localStorage)
+- [ ] Stats survive page reload
+- [ ] Stats survive closing and reopening browser
+- [ ] Note stats and Interval stats are tracked independently
+- [ ] "Reset Note Stats" clears only note stats, interval stats untouched
+- [ ] "Reset Interval Stats" clears only interval stats, note stats untouched
+- [ ] After reset, stats show 0/0 (0%) with empty history
+
+### Edge Cases
+- [ ] First ever visit shows 0/0 (0%) with no history
+- [ ] Clearing browser localStorage resets stats gracefully (no errors)
+- [ ] Corrupt localStorage data falls back to defaults without error
 
 ---
 
@@ -153,6 +217,8 @@
 - [ ] Clicking "Ear Training" when in Play returns to last used sub-mode (Note or Interval)
 - [ ] Answer display clears when switching modes
 - [ ] "Hear Again" state resets appropriately per mode (note answer vs interval answer)
+- [ ] Stats display updates to show correct mode's stats when switching between Note and Interval
+- [ ] Stats display hides when switching to Play mode
 
 ---
 

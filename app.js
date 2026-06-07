@@ -20,6 +20,7 @@ var earTrainingSubMode = "test";
 var lastAnswer = "";
 var lastIntervalAnswer = null;
 var lastIntervalNotes = null;
+var answerChecked = false;
 var selectedIntervals = new Set(INTERVALS.map(function (i) { return i.semitones; }));
 
 function formatLabel(note) {
@@ -133,6 +134,7 @@ function setMode(mode) {
 
   refreshPlayButtonState();
   updateGuessOptions();
+  renderStats();
 
   var guessSelect = document.getElementById("guess-select");
   if (guessSelect) {
@@ -275,6 +277,8 @@ function playRandomInterval() {
 
   lastIntervalAnswer = interval;
   lastIntervalNotes = [firstNote, secondNote];
+  answerChecked = false;
+  enableCheckButton();
   refreshPlayAgainButtonState();
   playIntervalSequence(firstNote, secondNote);
 }
@@ -574,8 +578,15 @@ function playRandomNote() {
   var answer = AUDIO_CLIPS[Math.floor(Math.random() * AUDIO_CLIPS.length)];
   document.getElementById("note-answer").value = answer;
   lastAnswer = answer;
+  answerChecked = false;
+  enableCheckButton();
   refreshPlayAgainButtonState();
   playSequence(answer);
+}
+
+function enableCheckButton() {
+  var btn = document.getElementById("check-answer");
+  if (btn) btn.disabled = false;
 }
 
 function checkAnswer() {
@@ -588,13 +599,23 @@ function checkAnswer() {
       answerDisplay.textContent = "Play an interval first.";
       return;
     }
-    var guessText = guessValue ? " Your guess: " + guessValue + "." : "";
+    if (!guessValue) {
+      answerDisplay.textContent = "Select an interval first.";
+      return;
+    }
     var correct = guessValue === lastIntervalAnswer.name;
     var rootLabel = formatLabel(lastIntervalNotes[0]);
     var targetLabel = formatLabel(lastIntervalNotes[1]);
     answerDisplay.textContent = "Answer: " + lastIntervalAnswer.name +
-      " (" + rootLabel + " → " + targetLabel + ")." + guessText +
-      (guessValue ? (correct ? " ✔" : " ✘") : "");
+      " (" + rootLabel + " → " + targetLabel + "). Your guess: " + guessValue + "." +
+      (correct ? " ✔" : " ✘");
+
+    if (!answerChecked) {
+      recordAnswer("intervals", lastIntervalAnswer.name, guessValue, correct);
+      answerChecked = true;
+      document.getElementById("check-answer").disabled = true;
+      renderStats();
+    }
     return;
   }
 
@@ -603,8 +624,68 @@ function checkAnswer() {
     answerDisplay.textContent = "Play a note first.";
     return;
   }
-  var guessText = guessValue ? " Your guess: " + formatLabel(guessValue) + "." : "";
-  answerDisplay.textContent = "Answer: " + formatLabel(answer) + "." + guessText;
+  if (!guessValue) {
+    answerDisplay.textContent = "Select a note first.";
+    return;
+  }
+  var correct = guessValue === answer;
+  answerDisplay.textContent = "Answer: " + formatLabel(answer) +
+    ". Your guess: " + formatLabel(guessValue) + "." +
+    (correct ? " ✔" : " ✘");
+
+  if (!answerChecked) {
+    recordAnswer("test", formatLabel(answer), formatLabel(guessValue), correct);
+    answerChecked = true;
+    document.getElementById("check-answer").disabled = true;
+    renderStats();
+  }
+}
+
+function renderStats() {
+  var container = document.getElementById("stats-container");
+  if (!container) return;
+
+  if (activeMode === "play") {
+    container.innerHTML = "";
+    return;
+  }
+
+  var stats = getStats(activeMode);
+  var pct = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+  var modeLabel = activeMode === "intervals" ? "Interval" : "Note";
+
+  var html = '<div class="stats-container">';
+  html += '<h4>' + modeLabel + ' Stats</h4>';
+  html += '<div class="stats-bar">';
+  html += '<span>Correct: ' + stats.correct + '/' + stats.total + ' (' + pct + '%)</span>';
+  html += '<span>Streak: ' + stats.streak + '</span>';
+  html += '</div>';
+
+  if (stats.history.length > 0) {
+    html += '<div class="stats-history">';
+    html += '<h5>Recent History</h5>';
+    html += '<ul class="history-list">';
+    stats.history.forEach(function (entry) {
+      var icon = entry.correct ? "✔" : "✘";
+      var cls = entry.correct ? "correct" : "wrong";
+      html += '<li class="history-item">';
+      html += '<span class="history-result ' + cls + '">' + icon + ' ' + entry.answer + ' → ' + entry.guess + '</span>';
+      html += '<span class="history-time">' + formatTimeAgo(entry.time) + '</span>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    html += '</div>';
+  }
+
+  html += '<button class="stats-reset" onclick="handleResetStats()">Reset ' + modeLabel + ' Stats</button>';
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+function handleResetStats() {
+  resetStats(activeMode);
+  renderStats();
 }
 
 loadAllNotes();
