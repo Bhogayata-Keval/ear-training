@@ -5,15 +5,15 @@ function initLanding() {
   try { visited = localStorage.getItem(VISITED_KEY) === "true"; } catch (e) {}
 
   var landing = document.getElementById("landing");
-  var appContent = document.getElementById("app-content");
+  var appWrapper = document.getElementById("app-wrapper");
 
   if (visited) {
     landing.className = "landing-compact";
     landing.querySelector(".landing-body").style.display = "none";
-    appContent.style.display = "";
+    appWrapper.style.display = "flex";
   } else {
     landing.className = "landing-hero";
-    appContent.style.display = "none";
+    appWrapper.style.display = "none";
   }
 }
 
@@ -21,11 +21,11 @@ function startTraining() {
   try { localStorage.setItem(VISITED_KEY, "true"); } catch (e) {}
 
   var landing = document.getElementById("landing");
-  var appContent = document.getElementById("app-content");
+  var appWrapper = document.getElementById("app-wrapper");
 
   landing.className = "landing-compact";
   landing.querySelector(".landing-body").style.display = "none";
-  appContent.style.display = "";
+  appWrapper.style.display = "flex";
 }
 
 function expandLanding() {

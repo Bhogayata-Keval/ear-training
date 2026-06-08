@@ -8,9 +8,6 @@ var WHITE_KEY_WIDTH = 56;
 var WHITE_KEY_GAP = 4;
 var STEP = WHITE_KEY_WIDTH + WHITE_KEY_GAP;
 var BLACK_KEY_WIDTH = 36;
-var PREVIOUS_WHITE = {
-  c: 'b', d: 'c', e: 'd', f: 'e', g: 'f', a: 'g', b: 'a'
-};
 var DEFAULT_SELECTED_NOTES = ["c4", "d4", "e4", "f4", "g4", "a4", "b4"];
 var selectedNotes = new Set(DEFAULT_SELECTED_NOTES);
 var AUDIO_CLIPS = Array.from(selectedNotes);
@@ -26,10 +23,14 @@ var selectedIntervals = new Set(INTERVALS.map(function (i) { return i.semitones;
 function formatLabel(note) {
   var match = note.match(/^([a-g])(-?)(\d+)$/i);
   if (!match) return note.toUpperCase();
-  var letter = match[1].toUpperCase();
-  var accidental = match[2] === "-" ? "b" : "";
+  var letter = match[1].toLowerCase();
   var octave = match[3];
-  return letter + accidental + octave;
+  if (match[2] === "-") {
+    var idx = WHITE_BASE_ORDER.indexOf(letter);
+    var nextLetter = WHITE_BASE_ORDER[(idx + 1) % 7].toUpperCase();
+    return nextLetter + "b" + octave;
+  }
+  return letter.toUpperCase() + octave;
 }
 
 function refreshPlayButtonState() {
@@ -152,7 +153,8 @@ function playNoteImmediate(noteId) {
 
 function handleKeyInteraction(noteId, button) {
   if (activeMode === "intervals") return;
-  if (activeMode === "play") {
+  if (currentLevel && !selectedNotes.has(noteId)) return;
+  if (activeMode === "play" || currentLevel) {
     playNoteImmediate(noteId);
     return;
   }
@@ -378,8 +380,7 @@ function showNoteList() {
 
       if (isBlack) {
         var baseWithoutDash = base.replace("-", "");
-        var preceding = PREVIOUS_WHITE[baseWithoutDash];
-        var baseIndex = preceding ? WHITE_INDEX[preceding] : null;
+        var baseIndex = WHITE_INDEX[baseWithoutDash];
         if (baseIndex == null) return;
         var left = baseIndex * STEP + WHITE_KEY_WIDTH + (WHITE_KEY_GAP / 2) - (BLACK_KEY_WIDTH / 2);
         key.style.left = left + "px";
@@ -430,6 +431,7 @@ function showIntervalSelector() {
     btn.textContent = interval.name;
     btn.dataset.semitones = interval.semitones;
     btn.addEventListener("click", function () {
+      if (currentLevel) return;
       if (selectedIntervals.has(interval.semitones)) {
         selectedIntervals.delete(interval.semitones);
         btn.classList.remove("selected");
@@ -611,7 +613,11 @@ function checkAnswer() {
       (correct ? " ✔" : " ✘");
 
     if (!answerChecked) {
-      recordAnswer("intervals", lastIntervalAnswer.name, guessValue, correct);
+      if (currentLevel) {
+        recordLevelAnswer(currentLevel.id, lastIntervalAnswer.name, guessValue, correct);
+      } else {
+        recordAnswer("intervals", lastIntervalAnswer.name, guessValue, correct);
+      }
       answerChecked = true;
       document.getElementById("check-answer").disabled = true;
       renderStats();
@@ -634,7 +640,11 @@ function checkAnswer() {
     (correct ? " ✔" : " ✘");
 
   if (!answerChecked) {
-    recordAnswer("test", formatLabel(answer), formatLabel(guessValue), correct);
+    if (currentLevel) {
+      recordLevelAnswer(currentLevel.id, formatLabel(answer), formatLabel(guessValue), correct);
+    } else {
+      recordAnswer("test", formatLabel(answer), formatLabel(guessValue), correct);
+    }
     answerChecked = true;
     document.getElementById("check-answer").disabled = true;
     renderStats();
@@ -650,9 +660,18 @@ function renderStats() {
     return;
   }
 
-  var stats = getStats(activeMode);
+  var stats, modeLabel, resetHandler;
+  if (currentLevel) {
+    stats = getLevelStats(currentLevel.id);
+    modeLabel = "Level " + currentLevel.id;
+    resetHandler = "handleResetLevelStats()";
+  } else {
+    stats = getStats(activeMode);
+    modeLabel = activeMode === "intervals" ? "Interval" : "Note";
+    resetHandler = "handleResetStats()";
+  }
+
   var pct = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-  var modeLabel = activeMode === "intervals" ? "Interval" : "Note";
 
   var html = '<div class="stats-container">';
   html += '<h4>' + modeLabel + ' Stats</h4>';
@@ -661,7 +680,19 @@ function renderStats() {
   html += '<span>Streak: ' + stats.streak + '</span>';
   html += '</div>';
 
-  if (stats.history.length > 0) {
+  if (currentLevel && currentLevel.free) {
+    var needed = LEVEL_MIN_ANSWERS;
+    var threshold = Math.round(LEVEL_UNLOCK_THRESHOLD * 100);
+    if (stats.total < needed) {
+      html += '<p class="level-goal">Answer ' + (needed - stats.total) + ' more to unlock next level (need ' + threshold + '% accuracy)</p>';
+    } else if (pct >= threshold) {
+      html += '<p class="level-goal level-goal-met">&#10003; Level mastered! Next level unlocked.</p>';
+    } else {
+      html += '<p class="level-goal">Need ' + threshold + '% accuracy to advance (currently ' + pct + '%)</p>';
+    }
+  }
+
+  if (stats.history && stats.history.length > 0) {
     html += '<div class="stats-history">';
     html += '<h5>Recent History</h5>';
     html += '<ul class="history-list">';
@@ -677,15 +708,24 @@ function renderStats() {
     html += '</div>';
   }
 
-  html += '<button class="stats-reset" onclick="handleResetStats()">Reset ' + modeLabel + ' Stats</button>';
+  html += '<button class="stats-reset" onclick="' + resetHandler + '">Reset Stats</button>';
   html += '</div>';
 
   container.innerHTML = html;
+
+  if (currentLevel) renderSidebar();
 }
 
 function handleResetStats() {
   resetStats(activeMode);
   renderStats();
+}
+
+function handleResetLevelStats() {
+  if (!currentLevel) return;
+  resetLevelStats(currentLevel.id);
+  renderStats();
+  renderSidebar();
 }
 
 loadAllNotes();
