@@ -3,20 +3,20 @@
 ## Landing Page
 
 ### First Visit (no localStorage `has_visited`)
-- [ ] Full hero displayed: "Online Music School" heading, subtitle, "Start Training" button
+- [ ] Full hero displayed: "MusicMuscle" heading, "Online Music School" subtitle, description text, "Start Training" button
 - [ ] Hero fills full viewport height (no grey dead space below)
 - [ ] Three feature cards visible: Train Your Ear, Practice Anytime, Track Progress
 - [ ] Feature cards have frosted glass style with hover lift effect
 - [ ] Decorative piano keyboard illustration visible at bottom of hero
 - [ ] Floating musical note symbols animate upward in the background
 - [ ] App content (keyboard, steps, settings) is hidden
-- [ ] Page title is "Online Music School"
+- [ ] Page title is "MusicMuscle — Train Your Musical Ear Online"
 - [ ] Sounds start loading in the background (even before clicking Start)
 - [ ] Clicking "Start Training" collapses hero to compact header and reveals app
 - [ ] After clicking "Start Training", `has_visited` is set in localStorage
 
 ### Return Visit (localStorage `has_visited` = "true")
-- [ ] Compact header displayed: "Online Music School" in one line
+- [ ] Compact header displayed: "MusicMuscle" in one line
 - [ ] Floating notes and feature cards are hidden in compact mode
 - [ ] App content is immediately visible (no click needed)
 - [ ] Clicking the header title expands back to full hero with musical theme
