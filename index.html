@@ -21,14 +21,63 @@
   <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "177d2c7f5c074081a1bc15acbeb4c18d"}'></script>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body onload="initLanding(); initSidebar(); showNoteList();">
+<body onload="initPremium(); initLanding(); initSidebar(); showNoteList();">
 
 <div id="landing" class="landing-hero">
+  <div class="landing-notes" aria-hidden="true">
+    <span class="float-note" style="left:8%;animation-delay:0s">&#9835;</span>
+    <span class="float-note" style="left:22%;animation-delay:1.4s">&#9834;</span>
+    <span class="float-note" style="left:40%;animation-delay:0.7s">&#9836;</span>
+    <span class="float-note" style="left:58%;animation-delay:2.1s">&#9833;</span>
+    <span class="float-note" style="left:75%;animation-delay:0.3s">&#9835;</span>
+    <span class="float-note" style="left:90%;animation-delay:1.7s">&#9834;</span>
+  </div>
   <h1 onclick="expandLanding()">Online Music School</h1>
   <div class="landing-body">
-    <p class="subtitle">Train your ear to recognize intervals between notes</p>
+    <p class="subtitle">Train your ear to recognize notes and intervals on the piano</p>
     <button class="cta" onclick="startTraining()">Start Training</button>
+
+    <div class="landing-features">
+      <div class="landing-feature">
+        <div class="landing-feature-icon">&#9835;</div>
+        <h3>Train Your Ear</h3>
+        <p>Learn to recognize notes and intervals by listening</p>
+      </div>
+      <div class="landing-feature">
+        <div class="landing-feature-icon">&#9836;</div>
+        <h3>Practice Anytime</h3>
+        <p>Interactive exercises right in your browser</p>
+      </div>
+      <div class="landing-feature">
+        <div class="landing-feature-icon">&#9733;</div>
+        <h3>Track Progress</h3>
+        <p>Structured levels from beginner to advanced</p>
+      </div>
+    </div>
+
+    <div class="landing-piano" aria-hidden="true">
+      <div class="lp-keys">
+        <div class="lp-w"></div><div class="lp-b" style="left:38px"></div>
+        <div class="lp-w"></div><div class="lp-b" style="left:86px"></div>
+        <div class="lp-w"></div>
+        <div class="lp-w"></div><div class="lp-b" style="left:182px"></div>
+        <div class="lp-w"></div><div class="lp-b" style="left:230px"></div>
+        <div class="lp-w"></div><div class="lp-b" style="left:278px"></div>
+        <div class="lp-w"></div>
+        <div class="lp-w"></div><div class="lp-b" style="left:374px"></div>
+        <div class="lp-w"></div><div class="lp-b" style="left:422px"></div>
+        <div class="lp-w"></div>
+        <div class="lp-w"></div><div class="lp-b" style="left:518px"></div>
+        <div class="lp-w"></div><div class="lp-b" style="left:566px"></div>
+        <div class="lp-w"></div><div class="lp-b" style="left:614px"></div>
+        <div class="lp-w"></div>
+      </div>
+    </div>
   </div>
+</div>
+
+<div id="offer-banner" class="offer-banner" style="display:none">
+  Get lifetime access to premium levels before July 31. Subscription-based plan may follow.
 </div>
 
 <div id="app-wrapper" style="display:none">
@@ -112,10 +161,12 @@
 </div>
 
 <input type="hidden" id="note-answer">
+<script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
 <script src="landing.js"></script>
 <script src="music.js"></script>
 <script src="stats.js"></script>
 <script src="audio.js"></script>
+<script src="payment.js"></script>
 <script src="levels.js"></script>
 <script src="app.js"></script>
 

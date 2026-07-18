@@ -164,7 +164,7 @@ function isLevelUnlocked(levelId) {
   if (!def) return false;
   if (def.comingSoon) return false;
   if (cheatMode) return true;
-  if (!def.free) return false;
+  if (!def.free) return isPremium;
   if (levelId === 1) return true;
   var prevStats = getLevelStats(levelId - 1);
   if (prevStats.total < LEVEL_MIN_ANSWERS) return false;
@@ -175,7 +175,7 @@ function getLevelStatus(levelId) {
   var def = LEVEL_DEFS.find(function(d) { return d.id === levelId; });
   if (!def) return "locked";
   if (def.comingSoon) return "coming-soon";
-  if (!def.free) return "paid";
+  if (!def.free && !isPremium) return "paid";
   if (!isLevelUnlocked(levelId)) return "locked";
   var stats = getLevelStats(levelId);
   if (stats.total >= LEVEL_MIN_ANSWERS && (stats.correct / stats.total) >= LEVEL_UNLOCK_THRESHOLD) return "completed";
@@ -381,9 +381,9 @@ function renderSidebar() {
       })(def.id));
     } else if (status === "paid") {
       item.style.cursor = "pointer";
-      item.addEventListener("click", function() {
-        alert("This level requires a premium subscription. Coming soon!");
-      });
+      item.addEventListener("click", (function(id) {
+        return function() { showPremiumModal(id); };
+      })(def.id));
     } else if (status === "locked") {
       item.style.opacity = "0.5";
     }

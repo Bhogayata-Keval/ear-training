@@ -4,6 +4,11 @@
 
 ### First Visit (no localStorage `has_visited`)
 - [ ] Full hero displayed: "Online Music School" heading, subtitle, "Start Training" button
+- [ ] Hero fills full viewport height (no grey dead space below)
+- [ ] Three feature cards visible: Train Your Ear, Practice Anytime, Track Progress
+- [ ] Feature cards have frosted glass style with hover lift effect
+- [ ] Decorative piano keyboard illustration visible at bottom of hero
+- [ ] Floating musical note symbols animate upward in the background
 - [ ] App content (keyboard, steps, settings) is hidden
 - [ ] Page title is "Online Music School"
 - [ ] Sounds start loading in the background (even before clicking Start)
@@ -12,9 +17,14 @@
 
 ### Return Visit (localStorage `has_visited` = "true")
 - [ ] Compact header displayed: "Online Music School" in one line
+- [ ] Floating notes and feature cards are hidden in compact mode
 - [ ] App content is immediately visible (no click needed)
-- [ ] Clicking the header title expands back to full hero
+- [ ] Clicking the header title expands back to full hero with musical theme
 - [ ] Clicking the header title again collapses back to compact
+
+### Mobile (< 600px)
+- [ ] Feature cards stack vertically instead of side by side
+- [ ] Decorative piano is hidden on small screens
 
 ### Edge Cases
 - [ ] Clearing localStorage restores full hero on next visit
