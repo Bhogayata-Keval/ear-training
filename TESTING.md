@@ -32,6 +32,21 @@
 
 ---
 
+## Footer
+
+- [ ] Footer visible below landing page hero on first visit
+- [ ] Footer visible below app content after starting training
+- [ ] "About" link visible in top-right of full landing page hero
+- [ ] "About" link visible in compact header bar (top-right)
+- [ ] Clicking "About" smooth-scrolls to the footer
+- [ ] "Why MusicMuscle?" heading and founder story text displayed
+- [ ] "Connect on LinkedIn" link opens LinkedIn profile in new tab
+- [ ] Contact email link (bhogayatakb@gmail.com) opens mail client
+- [ ] Footer has dark background with light text
+- [ ] Footer is responsive on mobile screens
+
+---
+
 ## Page Load (all modes)
 
 - [ ] Sound status shows "Loading sounds..."
