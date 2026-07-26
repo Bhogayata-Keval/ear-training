@@ -13,6 +13,14 @@ function initPremium() {
 
   var banner = document.getElementById("offer-banner");
   if (banner) banner.style.display = isPremium ? "none" : "";
+
+  var deadlineEl = document.getElementById("offer-deadline");
+  if (deadlineEl) {
+    var now = new Date();
+    var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    var monthName = now.toLocaleString("en-US", { month: "long" });
+    deadlineEl.textContent = monthName + " " + lastDay;
+  }
 }
 
 var pendingLevelId = null;
