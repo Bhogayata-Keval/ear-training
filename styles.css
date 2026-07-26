@@ -215,10 +215,11 @@ h1 {
 }
 
 .landing-compact {
+  display: flex;
+  align-items: center;
   background: linear-gradient(135deg, #1c61c3, #2d9cdb);
   color: #fff;
   padding: 14px 24px;
-  overflow: hidden;
 }
 
 .landing-compact .landing-notes {
@@ -227,8 +228,8 @@ h1 {
 
 .landing-compact .header-about-link {
   position: static;
-  float: right;
-  margin-top: 4px;
+  order: 1;
+  margin-left: auto;
 }
 
 .landing-compact h1 {

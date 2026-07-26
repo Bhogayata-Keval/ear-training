@@ -49,14 +49,17 @@
 
 ## Page Load (all modes)
 
-- [ ] Sound status shows "Loading sounds..."
+- [ ] Sound status shows "Loading sounds…"
 - [ ] After loading completes, status shows "Sounds ready"
+- [ ] Sounds are Salamander Grand Piano samples loaded via Tone.js from CDN
+- [ ] If CDN is unreachable, sound status shows "Failed to load sounds" in red
 - [ ] Keyboard renders with octaves 3-6, white and black keys
 - [ ] Black keys appear only between C-D, D-E, F-G, G-A, A-B (no black key between E-F or B-C)
 - [ ] Black key labels show correct flat names: Db, Eb, Gb, Ab, Bb
 - [ ] Default mode is Ear Training > Note
 - [ ] Sub-mode selector (Note / Interval) is visible
 - [ ] Middle octave keys (C4-B4) are selected by default
+- [ ] First user interaction (click/keypress/touch) activates audio playback
 
 ---
 
